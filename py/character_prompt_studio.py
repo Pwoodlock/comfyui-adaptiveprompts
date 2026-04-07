@@ -59,7 +59,7 @@ class CharacterPromptStudio:
             return categories
 
         # Scan each subdirectory
-        for category_name in os.listdir(wildcard_dir):
+        for category_name in sorted(os.listdir(wildcard_dir)):
             category_path = os.path.join(wildcard_dir, category_name)
             if not os.path.isdir(category_path):
                 continue
@@ -85,7 +85,6 @@ class CharacterPromptStudio:
 
         # Scan for available wildcard categories
         categories = cls._scan_wildcard_categories()
-        cls._WILDCARD_CATEGORIES = categories
         category_list = list(categories.keys()) if categories else ["None"]
         category_list.sort()
 
@@ -99,7 +98,7 @@ class CharacterPromptStudio:
                 "prompt": ("STRING", {
                     "multiline": True,
                     "default": "",
-                    "tooltip": "Main prompt. Use __category/file__ syntax or use insert helper below."
+                    "tooltip": "Main prompt. Use __category/file__ syntax."
                 }),
                 "seed": ("INT", {
                     "default": 0,
@@ -109,17 +108,17 @@ class CharacterPromptStudio:
                 }),
             },
             "optional": {
-                # Wildcard Browser helpers
+                # Wildcard category browser (shows available categories)
                 "wc_category": (category_list, {
                     "default": category_list[0] if category_list else "",
                     "tooltip": category_tooltip
                 }),
-                "wc_file": ("STRING", {
-                    "default": "",
-                    "tooltip": f"Wildcard file name from selected category. Examples: {', '.join(categories.get(category_list[0], [])[:5]) if category_list else 'N/A'}"
-                }),
 
                 # Processing Options
+                "refresh_wildcards": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "Set to TRUE to refresh wildcard category cache after adding new files"
+                }),
                 "hide_comments": ("BOOLEAN", {
                     "default": True,
                     "tooltip": "Remove ## comment ## blocks from output"
@@ -158,8 +157,8 @@ class CharacterPromptStudio:
             }
         }
 
-    RETURN_TYPES = ("STRING", "STRING", "DICT")
-    RETURN_NAMES = ("prompt", "wildcards_used", "context")
+    RETURN_TYPES = ("STRING", "STRING")
+    RETURN_NAMES = ("prompt", "wildcards_used")
     FUNCTION = "process"
     CATEGORY = "cc-prompt-studio/generation"
 
@@ -243,14 +242,14 @@ class CharacterPromptStudio:
         matches = re.findall(pattern, text)
         if matches:
             return ', '.join(set(matches))
-        return "None"
+        return ""
 
     def process(
         self,
         prompt: str,
         seed: int,
         wc_category: str = "",
-        wc_file: str = "",
+        refresh_wildcards: bool = False,
         hide_comments: bool = True,
         shuffle_tags: bool = False,
         shuffle_amount: int = 5,
@@ -259,7 +258,7 @@ class CharacterPromptStudio:
         cleanup_whitespace: bool = True,
         wildcard_folder: str = None,
         context: dict = None
-    ) -> Tuple[str, str, dict]:
+    ) -> Tuple[str, str]:
         """
         Process prompt with all enabled options.
 
@@ -267,7 +266,7 @@ class CharacterPromptStudio:
             prompt: Input prompt text
             seed: Random seed
             wc_category: Selected wildcard category (for info only)
-            wc_file: Selected wildcard file (for info only)
+            refresh_wildcards: If TRUE, clears cache and rescans wildcard folders
             hide_comments: Remove comment blocks
             shuffle_tags: Enable tag shuffling
             shuffle_amount: Number of shuffle moves
@@ -278,8 +277,16 @@ class CharacterPromptStudio:
             context: Variable context from previous nodes
 
         Returns:
-            (processed_prompt, wildcards_used, context)
+            (processed_prompt, wildcards_used)
         """
+        # Handle wildcard refresh
+        if refresh_wildcards:
+            from .wildcard_utils import clear_category_cache
+            clear_category_cache()
+            # Also clear our cached categories
+            if hasattr(self.__class__, '_WILDCARD_CATEGORIES'):
+                delattr(self.__class__, '_WILDCARD_CATEGORIES')
+
         rng = SeededRandom(seed)
 
         # Normalize incoming context
@@ -312,11 +319,9 @@ class CharacterPromptStudio:
             result = self._shuffle_tags(result, shuffle_amount, seed)
 
         # Cleanup using PromptCleanup logic (reuse existing)
+        # Note: PromptCleanup.process returns a tuple (string,), so we extract the first element
         if cleanup_commas or cleanup_whitespace:
-            # Create a PromptCleanup instance and use its process method
-            cleanup = PromptCleanup()
-            # PromptCleanup.process is a static method, call it directly
-            result = cleanup.process(
+            cleaned = PromptCleanup.process(
                 result,
                 cleanup_commas=cleanup_commas,
                 cleanup_newlines="false",
@@ -324,13 +329,15 @@ class CharacterPromptStudio:
                 remove_lora_tags=False,
                 fix_brackets="false"
             )
+            # PromptCleanup returns a tuple, extract the string
+            result = cleaned[0] if isinstance(cleaned, tuple) else cleaned
 
         # Ensure context buckets are normalized
         for k, v in list(normalized_context.items()):
             if not isinstance(v, dict):
                 normalized_context[k] = _ensure_bucket_dict(v)
 
-        return (result, wildcards_used, normalized_context)
+        return (result, wildcards_used)
 
 
 # For compatibility with wildcard dropdown updates
