@@ -303,9 +303,23 @@ class CharacterPromptStudio:
 
         # Build categories list (always fresh when refresh=True)
         categories = self._scan_wildcard_categories()
-        categories_list = "📁 Wildcard Categories:\n"
-        for cat, files in sorted(categories.items()):
-            categories_list += f"  • {cat}: {len(files)} files\n"
+        categories_list = "📁 WILDCARD SYNTAX EXAMPLES:\n\n"
+
+        for cat, items in sorted(categories.items()):
+            categories_list += f"━━━ {cat} ━━━\n"
+            # Show example syntax
+            if items:
+                # Show up to 5 examples
+                for item in sorted(items)[:5]:
+                    if item.endswith('/'):
+                        # It's a subdirectory
+                        categories_list += f"  __{cat}/{item[:-1]}/*__  (any file in {item[:-1]})\n"
+                    else:
+                        # It's a file
+                        categories_list += f"  __{cat}/{item}__\n"
+                if len(items) > 5:
+                    categories_list += f"  ... and {len(items) - 5} more\n"
+            categories_list += "\n"
 
         rng = SeededRandom(seed)
 
