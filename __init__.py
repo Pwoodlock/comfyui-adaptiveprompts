@@ -15,6 +15,7 @@ from .py.math_utils import *
 
 # cc-prompt-studio: Unified Character Prompt node
 from .py.character_prompt_studio import CharacterPromptStudio
+from .py.llm_janitor import CCLLMJanitor
 
 NODE_CLASS_MAPPINGS = {
     "PromptGenerator": PromptGenerator,
@@ -42,6 +43,7 @@ NODE_CLASS_MAPPINGS = {
 
     # cc-prompt-studio: Unified Character Prompt node
     "CharacterPromptStudio": CharacterPromptStudio,
+    "CCLLMJanitor": CCLLMJanitor,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -70,6 +72,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
 
     # cc-prompt-studio: Unified Character Prompt node
     "CharacterPromptStudio": "Character Prompt Studio 🎭",
+    "CCLLMJanitor": "CC LLM Janitor 🤖",
 }
 
 def register_nodes(comfy):
