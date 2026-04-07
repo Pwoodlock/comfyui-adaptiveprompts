@@ -326,9 +326,12 @@ class CharacterPromptStudio:
         # Normalize incoming context
         normalized_context = _normalize_input_context(context)
 
-        # Determine wildcard folder to use
+        # Determine wildcard folder to use - need FULL path, not just folder name
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         folder_map = getattr(self.__class__, "_CATEGORY_MAP", {})
         folder_name = folder_map.get(wildcard_folder, "wildcards")
+        # Convert to full absolute path
+        wildcard_path = os.path.join(base_dir, folder_name)
 
         # Track wildcards used in original prompt
         wildcards_used = self._track_wildcards_used(prompt)
@@ -336,14 +339,14 @@ class CharacterPromptStudio:
         # Handle comment blocks first (they get processed but not shown)
         comment_blocks = re.findall(r"##(.*?)##", prompt, flags=re.DOTALL)
         for block in comment_blocks:
-            _ = resolve_wildcards(block, rng, folder_name, _resolved_vars=normalized_context)
+            _ = resolve_wildcards(block, rng, wildcard_path, _resolved_vars=normalized_context)
 
         # Remove comments if requested
         if hide_comments:
             prompt = re.sub(r"##.*?##", "", prompt, flags=re.DOTALL)
 
-        # Resolve wildcards (reuse existing function)
-        result = resolve_wildcards(prompt, rng, folder_name, _resolved_vars=normalized_context)
+        # Resolve wildcards (reuse existing function) - pass FULL path!
+        result = resolve_wildcards(prompt, rng, wildcard_path, _resolved_vars=normalized_context)
 
         # Apply processing options in order
         if deduplicate:
