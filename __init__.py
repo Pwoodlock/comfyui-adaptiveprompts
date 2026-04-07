@@ -13,6 +13,9 @@ from .py.string_utils import *
 from .py.misc_utils import *
 from .py.math_utils import *
 
+# cc-prompt-studio: Unified Character Prompt node
+from .py.character_prompt_studio import CharacterPromptStudio
+
 NODE_CLASS_MAPPINGS = {
     "PromptGenerator": PromptGenerator,
     "PromptGeneratorAdvanced": PromptGeneratorAdvanced,
@@ -36,7 +39,9 @@ NODE_CLASS_MAPPINGS = {
     "SaveImageAndText": SaveImageAndText,
     "RandomFloats": RandomFloats4,
     "RandomIntegers": RandomIntegers4,
-    
+
+    # cc-prompt-studio: Unified Character Prompt node
+    "CharacterPromptStudio": CharacterPromptStudio,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -62,6 +67,9 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "SaveImageAndText": "Save Image And Text",
     "RandomFloats": "Random Floats 4",
     "RandomIntegers": "Random Integers 4",
+
+    # cc-prompt-studio: Unified Character Prompt node
+    "CharacterPromptStudio": "Character Prompt Studio 🎭",
 }
 
 def register_nodes(comfy):
