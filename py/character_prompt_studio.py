@@ -159,8 +159,8 @@ class CharacterPromptStudio:
             }
         }
 
-    RETURN_TYPES = ("STRING", "STRING")
-    RETURN_NAMES = ("prompt", "wildcards_used")
+    RETURN_TYPES = ("STRING", "STRING", "STRING")
+    RETURN_NAMES = ("prompt", "wildcards_used", "categories_list")
     FUNCTION = "process"
     CATEGORY = "cc-prompt-studio/generation"
 
@@ -279,7 +279,7 @@ class CharacterPromptStudio:
             context: Variable context from previous nodes
 
         Returns:
-            (processed_prompt, wildcards_used)
+            (processed_prompt, wildcards_used, categories_list)
         """
         # Handle wildcard refresh when refresh button is clicked
         if refresh:
@@ -288,6 +288,12 @@ class CharacterPromptStudio:
             # Also clear our cached categories
             if hasattr(self.__class__, '_WILDCARD_CATEGORIES'):
                 delattr(self.__class__, '_WILDCARD_CATEGORIES')
+
+        # Build categories list (always fresh when refresh=True)
+        categories = self._scan_wildcard_categories()
+        categories_list = "📁 Wildcard Categories:\n"
+        for cat, files in sorted(categories.items()):
+            categories_list += f"  • {cat}: {len(files)} files\n"
 
         rng = SeededRandom(seed)
 
@@ -339,7 +345,7 @@ class CharacterPromptStudio:
             if not isinstance(v, dict):
                 normalized_context[k] = _ensure_bucket_dict(v)
 
-        return (result, wildcards_used)
+        return (result, wildcards_used, categories_list)
 
 
 # For compatibility with wildcard dropdown updates
