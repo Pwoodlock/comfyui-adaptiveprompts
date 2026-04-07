@@ -47,8 +47,12 @@ class CharacterPromptStudio:
         """
         Scan wildcard directory to build category->files mapping.
 
+        Handles both:
+        - Direct .txt files: NSFW_v1/file.txt
+        - Nested subdirs: XcardsAIO_Mega/XBound/file.txt
+
         Returns:
-            Dict mapping category names to lists of wildcard filenames
+            Dict mapping category names to lists of wildcard filenames or subdirectories
         """
         base_dir = _default_package_root()
         wildcard_dir = os.path.join(base_dir, "wildcards")
@@ -64,15 +68,23 @@ class CharacterPromptStudio:
             if not os.path.isdir(category_path):
                 continue
 
-            # Get all .txt files in this category
-            files = []
+            items = []
+
+            # First, check for direct .txt files
             for filename in sorted(os.listdir(category_path)):
                 if filename.endswith('.txt'):
                     # Remove .txt extension for display
-                    files.append(filename[:-4])
+                    items.append(filename[:-4])
 
-            if files:
-                categories[category_name] = files
+            # Then, check for subdirectories (nested structure)
+            for item_name in sorted(os.listdir(category_path)):
+                item_path = os.path.join(category_path, item_name)
+                if os.path.isdir(item_path):
+                    # It's a subdirectory, add it with trailing slash indicator
+                    items.append(f"{item_name}/")
+
+            if items:
+                categories[category_name] = items
 
         return categories
 
