@@ -108,6 +108,12 @@ class CharacterPromptStudio:
                 }),
             },
             "optional": {
+                # Action button - set to TRUE to refresh
+                "refresh": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "🔄 Click to refresh wildcard cache after adding new files/folders"
+                }),
+
                 # Wildcard category browser (shows available categories)
                 "wc_category": (category_list, {
                     "default": category_list[0] if category_list else "",
@@ -115,10 +121,6 @@ class CharacterPromptStudio:
                 }),
 
                 # Processing Options
-                "refresh_wildcards": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Set to TRUE to refresh wildcard category cache after adding new files"
-                }),
                 "hide_comments": ("BOOLEAN", {
                     "default": True,
                     "tooltip": "Remove ## comment ## blocks from output"
@@ -248,8 +250,8 @@ class CharacterPromptStudio:
         self,
         prompt: str,
         seed: int,
+        refresh: bool = False,
         wc_category: str = "",
-        refresh_wildcards: bool = False,
         hide_comments: bool = True,
         shuffle_tags: bool = False,
         shuffle_amount: int = 5,
@@ -265,8 +267,8 @@ class CharacterPromptStudio:
         Args:
             prompt: Input prompt text
             seed: Random seed
+            refresh: If TRUE, clears cache and rescans wildcard folders
             wc_category: Selected wildcard category (for info only)
-            refresh_wildcards: If TRUE, clears cache and rescans wildcard folders
             hide_comments: Remove comment blocks
             shuffle_tags: Enable tag shuffling
             shuffle_amount: Number of shuffle moves
@@ -279,8 +281,8 @@ class CharacterPromptStudio:
         Returns:
             (processed_prompt, wildcards_used)
         """
-        # Handle wildcard refresh
-        if refresh_wildcards:
+        # Handle wildcard refresh when refresh button is clicked
+        if refresh:
             from .wildcard_utils import clear_category_cache
             clear_category_cache()
             # Also clear our cached categories
