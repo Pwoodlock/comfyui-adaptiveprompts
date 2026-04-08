@@ -43,9 +43,9 @@ class CharacterPromptStudio:
         self.input_dir = os.path.join(base_dir, "wildcards")
 
     @classmethod
-    def _scan_wildcard_categories(cls) -> Dict[str, List[str]]:
+    def _scan_wildcard_categories(cls, wildcard_root: str) -> Dict[str, List[str]]:
         """
-        Scan wildcard directory to build category->files mapping.
+        Scan a wildcard root directory to build category->files mapping.
 
         Handles both:
         - Direct .txt files: NSFW_v1/file.txt
@@ -54,8 +54,7 @@ class CharacterPromptStudio:
         Returns:
             Dict mapping category names to lists of wildcard filenames or subdirectories
         """
-        base_dir = _default_package_root()
-        wildcard_dir = os.path.join(base_dir, "wildcards")
+        wildcard_dir = wildcard_root
 
         categories = {}
 
@@ -95,8 +94,9 @@ class CharacterPromptStudio:
         cls._CATEGORY_LABELS = labels
         cls._CATEGORY_MAP = mapping
 
-        # Scan for available wildcard categories
-        categories = cls._scan_wildcard_categories()
+        # Scan for available wildcard categories (default to first set)
+        default_root = mapping.get(labels[0], os.path.join(_default_package_root(), "wildcards")) if labels else os.path.join(_default_package_root(), "wildcards")
+        categories = cls._scan_wildcard_categories(default_root)
         category_list = list(categories.keys()) if categories else ["None"]
         category_list.sort()
 
@@ -300,7 +300,15 @@ class CharacterPromptStudio:
                 delattr(self.__class__, '_WILDCARD_CATEGORIES')
 
         # Build categories list (always fresh when refresh=True)
-        categories = self._scan_wildcard_categories()
+        # Determine wildcard folder to use (absolute path)
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        folder_map = getattr(self.__class__, "_CATEGORY_MAP", {}) or {}
+        # build_category_options() maps label -> absolute path already
+        wildcard_path = folder_map.get(wildcard_folder) if wildcard_folder else None
+        if not wildcard_path:
+            wildcard_path = os.path.join(base_dir, "wildcards")
+
+        categories = self._scan_wildcard_categories(wildcard_path)
         categories_list = "# Wildcard Syntax Examples\n\n"
 
         for cat, items in sorted(categories.items()):
@@ -320,13 +328,6 @@ class CharacterPromptStudio:
 
         # Normalize incoming context
         normalized_context = _normalize_input_context(context)
-
-        # Determine wildcard folder to use - need FULL path, not just folder name
-        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        folder_map = getattr(self.__class__, "_CATEGORY_MAP", {})
-        folder_name = folder_map.get(wildcard_folder, "wildcards")
-        # Convert to full absolute path
-        wildcard_path = os.path.join(base_dir, folder_name)
 
         # Track wildcards used in original prompt
         wildcards_used = self._track_wildcards_used(prompt)

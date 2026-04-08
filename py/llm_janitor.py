@@ -20,6 +20,7 @@ from .lm_studio_client import (
     is_sdk_available,
     get_sdk_error
 )
+from .wildcard_utils import build_category_options, _default_package_root
 
 
 class CCLLMJanitor:
@@ -74,19 +75,15 @@ class CCLLMJanitor:
     }
 
     @classmethod
-    def _scan_wildcard_folders(cls) -> List[str]:
-        """Scan wildcards/ directory for available folders."""
-        base_dir = Path(__file__).parent.parent / "wildcards"
+    def _scan_wildcard_sets(cls) -> List[str]:
+        """
+        List available wildcard *sets* (folders named wildcards, wildcards_*).
 
-        if not base_dir.exists():
-            return []
-
-        folders = []
-        for item in base_dir.iterdir():
-            if item.is_dir():
-                folders.append(item.name)
-
-        return sorted(folders)
+        This matches the selector used by other nodes so the janitor operates
+        on the same active wildcard library.
+        """
+        labels, _, _ = build_category_options()
+        return labels or ["wildcards"]
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -94,15 +91,17 @@ class CCLLMJanitor:
         models = cls._get_cached_models()
         model_list = models if models else ["(No LM Studio running)"]
 
-        # Auto-detect wildcard folders
-        folders = cls._scan_wildcard_folders()
-        folder_list = folders if folders else ["(No folders found)"]
+        # Auto-detect wildcard sets (wildcards, wildcards_*)
+        labels, mapping, tooltip = build_category_options()
+        cls._CATEGORY_LABELS = labels
+        cls._CATEGORY_MAP = mapping
+        folder_list = labels if labels else ["wildcards"]
 
         return {
             "required": {
                 "wildcard_folder": (folder_list, {
                     "default": folder_list[0] if folder_list else "",
-                    "tooltip": "Select wildcard folder to process"
+                    "tooltip": tooltip or "Select which wildcard set to process"
                 }),
                 "operation": (list(cls.OPERATIONS.keys()), {
                     "default": "basic_cleanup",
@@ -186,8 +185,8 @@ class CCLLMJanitor:
     @classmethod
     def _create_backup(cls, source_path: Path, backup_name: str) -> Path:
         """Create a backup of the source folder."""
-        # Store backups outside wildcard folder to avoid detection
-        root = source_path.parent.parent.parent  # Go up from wildcards/category/ to cc-prompt-studio root
+        # Store backups at the package root to avoid scanning them as wildcards
+        root = Path(_default_package_root())
         backup_dir = root / "wildcard_backups" / backup_name
 
         try:
@@ -389,8 +388,9 @@ Here are the wildcard prompts to process (showing first 500):
             self._models_cache_time = 0
 
         # Determine paths
-        base_dir = Path(__file__).parent.parent
-        wildcard_dir = base_dir / "wildcards" / wildcard_folder
+        base_dir = Path(_default_package_root())
+        folder_map = getattr(self.__class__, "_CATEGORY_MAP", {}) or {}
+        wildcard_dir = Path(folder_map.get(wildcard_folder) or (base_dir / "wildcards"))
 
         print(f"[CC LLM Janitor] base_dir={base_dir}")
         print(f"[CC LLM Janitor] wildcard_dir={wildcard_dir}")
@@ -398,7 +398,7 @@ Here are the wildcard prompts to process (showing first 500):
 
         if not wildcard_dir.exists():
             print(f"[CC LLM Janitor] ERROR: Folder not found!")
-            return (op_guide, f"Error: Folder '{wildcard_folder}' not found in wildcards/", "", "", 0)
+            return (op_guide, f"Error: Wildcard set '{wildcard_folder}' not found", "", "", 0)
 
         # Scan for files - recursive (will flatten later, using rglob for now)
         supported_extensions = ["*.txt", "*.md", "*.yml", "*.yaml", "*.json"]
@@ -437,7 +437,7 @@ Here are the wildcard prompts to process (showing first 500):
 
             if not dry_run:
                 # Write output
-                output_dir = wildcard_dir.parent / f"{wildcard_folder}{output_suffix}"
+                output_dir = wildcard_dir.parent / f"{wildcard_dir.name}{output_suffix}"
                 output_dir.mkdir(exist_ok=True)
                 output_file = output_dir / "all_merged.txt"
                 with open(output_file, 'w', encoding='utf-8') as f:
@@ -472,7 +472,7 @@ Here are the wildcard prompts to process (showing first 500):
 
             if not dry_run:
                 # Write output
-                output_dir = wildcard_dir.parent / f"{wildcard_folder}{output_suffix}"
+                output_dir = wildcard_dir.parent / f"{wildcard_dir.name}{output_suffix}"
                 output_dir.mkdir(exist_ok=True)
                 output_file = output_dir / "result.txt"
                 with open(output_file, 'w', encoding='utf-8') as f:
@@ -495,7 +495,7 @@ Here are the wildcard prompts to process (showing first 500):
             try:
                 data = json.loads(response)
                 # Write categorized files
-                output_dir = wildcard_dir.parent / f"{wildcard_folder}{output_suffix}"
+                output_dir = wildcard_dir.parent / f"{wildcard_dir.name}{output_suffix}"
                 output_dir.mkdir(exist_ok=True)
 
                 files_written = 0

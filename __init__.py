@@ -16,7 +16,7 @@ from .py.math_utils import *
 # cc-prompt-studio: Unified Character Prompt node
 from .py.character_prompt_studio import CharacterPromptStudio
 from .py.llm_janitor import CCLLMJanitor
-from .py.wildcard_tools import WildcardTools, WildcardSearchExtract
+from .py.wildcard_tools import WildcardTools, WildcardSearchExtract, WildcardPreview
 
 # Web directory for JavaScript extensions (custom widgets, UI enhancements)
 WEB_DIRECTORY = "./js"
@@ -50,6 +50,7 @@ NODE_CLASS_MAPPINGS = {
     "CCLLMJanitor": CCLLMJanitor,
     "WildcardTools": WildcardTools,
     "WildcardSearchExtract": WildcardSearchExtract,
+    "WildcardPreview": WildcardPreview,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -81,6 +82,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "CCLLMJanitor": "CC LLM Janitor",
     "WildcardTools": "Wildcard Tools",
     "WildcardSearchExtract": "Wildcard Search & Extract",
+    "WildcardPreview": "Wildcard Preview",
 }
 
 def register_nodes(comfy):

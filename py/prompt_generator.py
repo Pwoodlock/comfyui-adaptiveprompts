@@ -127,7 +127,8 @@ class PromptGeneratorAdvanced:
             getattr(self.__class__, "_CATEGORY_LABELS", ["Default"])[0]
         )
         folder_map = getattr(self.__class__, "_CATEGORY_MAP", {}) or {}
-        folder_name = folder_map.get(category_label, "wildcards")
+        # build_category_options() maps label -> absolute path already
+        folder_name = folder_map.get(category_label, os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")), "wildcards"))
 
         # ----- handle comment blocks first -----
         comment_blocks = re.findall(r"##(.*?)##", prompt, flags=re.DOTALL)

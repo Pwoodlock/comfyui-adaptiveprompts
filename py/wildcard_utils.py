@@ -64,7 +64,10 @@ def build_category_options(base_dir: str | None = None):
     try:
         for name in os.listdir(base_dir):
             path = os.path.join(base_dir, name)
-            if os.path.isdir(path) and name.startswith("wildcard"):
+            # Convention: wildcard sets live in folders named:
+            # - wildcards
+            # - wildcards_<name>
+            if os.path.isdir(path) and name.startswith("wildcards"):
                 folder_names.append(name)
     except Exception:
         folder_names = []
@@ -77,15 +80,17 @@ def build_category_options(base_dir: str | None = None):
     label_list = []
     label_to_folder = {}
     for fname in folder_names:
+        # Keep labels stable and unambiguous: show the real folder name.
+        # (If you want prettier labels later, we can do it without breaking saved workflows.)
         label = fname
         label_list.append(label)
-        # map label to absolute folder path under base_dir
+        # Map label -> absolute folder path under base_dir
         label_to_folder[label] = os.path.join(base_dir, fname)
 
     tooltip = (
         "Select which wildcards folder to use. Create alternate folders named "
         "'wildcards_*' (eg. 'wildcards_fresh') inside the package root.\n\n"
-        "defaults to the global '/wildcards/ if a file is missing'"
+        "If a wildcard file is missing, the resolver falls back to ComfyUI's global wildcards root."
     )
 
     return label_list, label_to_folder, tooltip

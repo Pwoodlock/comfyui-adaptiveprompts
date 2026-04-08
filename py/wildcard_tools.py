@@ -10,6 +10,9 @@ import re
 from pathlib import Path
 from typing import List, Tuple, Set
 
+from .generator import SeededRandom, process_file_wildcard
+from .wildcard_utils import build_category_options, _default_package_root
+
 
 class WildcardTools:
     """
@@ -24,12 +27,17 @@ class WildcardTools:
 
     def __init__(self):
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        # Default presets location (can be overridden per wildcard set at runtime)
+        self._package_root = base_dir
         self.presets_dir = os.path.join(base_dir, "wildcards", "my_presets")
         # Ensure directory exists
         Path(self.presets_dir).mkdir(parents=True, exist_ok=True)
 
     @classmethod
     def INPUT_TYPES(cls):
+        labels, mapping, tooltip = build_category_options()
+        cls._CATEGORY_LABELS = labels
+        cls._CATEGORY_MAP = mapping
         return {
             "required": {
                 "input_text": ("STRING", {
@@ -54,6 +62,10 @@ class WildcardTools:
                 "separator": ("STRING", {
                     "default": ",",
                     "tooltip": "Separator between tags (default: comma)"
+                }),
+                "wildcard_folder": (labels, {
+                    "default": labels[0] if labels else "wildcards",
+                    "tooltip": tooltip
                 }),
                 "save_to_file": ("BOOLEAN", {
                     "default": False,
@@ -127,6 +139,7 @@ class WildcardTools:
         input_text: str,
         operation: str,
         separator: str = ",",
+        wildcard_folder: str = "wildcards",
         save_to_file: bool = False,
         filename: str = "my_wildcards"
     ) -> Tuple[str, str, int]:
@@ -194,12 +207,18 @@ class WildcardTools:
 
         # Save to file if requested
         if save_to_file and result:
+            # Resolve presets dir for selected wildcard set (defaults to package-root wildcards/)
+            folder_map = getattr(self.__class__, "_CATEGORY_MAP", {}) or {}
+            wildcard_root = folder_map.get(wildcard_folder) or os.path.join(self._package_root, "wildcards")
+            presets_dir = os.path.join(wildcard_root, "my_presets")
+            Path(presets_dir).mkdir(parents=True, exist_ok=True)
+
             # Clean filename
             filename = re.sub(r'[^\w\-_]', '_', filename)
             if not filename.endswith('.txt'):
                 filename = f"{filename}.txt"
 
-            filepath = os.path.join(self.presets_dir, filename)
+            filepath = os.path.join(presets_dir, filename)
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(result)
 
@@ -216,11 +235,12 @@ class WildcardSearchExtract:
     def __init__(self):
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         self.base_dir = base_dir
-        self.presets_dir = os.path.join(base_dir, "wildcards", "my_presets")
-        Path(self.presets_dir).mkdir(parents=True, exist_ok=True)
 
     @classmethod
     def INPUT_TYPES(cls):
+        labels, mapping, tooltip = build_category_options()
+        cls._CATEGORY_LABELS = labels
+        cls._CATEGORY_MAP = mapping
         return {
             "required": {
                 "keywords": ("STRING", {
@@ -234,6 +254,10 @@ class WildcardSearchExtract:
                 }),
             },
             "optional": {
+                "wildcard_folder": (labels, {
+                    "default": labels[0] if labels else "wildcards",
+                    "tooltip": tooltip
+                }),
                 "case_sensitive": ("BOOLEAN", {
                     "default": False,
                     "tooltip": "Match case (default: false)"
@@ -254,6 +278,7 @@ class WildcardSearchExtract:
         self,
         keywords: str,
         save_filename: str,
+        wildcard_folder: str = "wildcards",
         case_sensitive: bool = False,
         match_all: bool = False
     ) -> Tuple[str, str, int]:
@@ -264,7 +289,8 @@ class WildcardSearchExtract:
         if not keyword_list:
             return ("", "No keywords provided", 0)
 
-        wildcard_dir = os.path.join(self.base_dir, "wildcards")
+        folder_map = getattr(self.__class__, "_CATEGORY_MAP", {}) or {}
+        wildcard_dir = folder_map.get(wildcard_folder) or os.path.join(self.base_dir, "wildcards")
         matches: Set[str] = set()
 
         # Search through all .txt files (except my_presets)
@@ -309,14 +335,101 @@ class WildcardSearchExtract:
 
         # Save to file
         if result_list:
+            presets_dir = os.path.join(wildcard_dir, "my_presets")
+            Path(presets_dir).mkdir(parents=True, exist_ok=True)
             filename = re.sub(r'[^\w\-_]', '_', save_filename)
             if not filename.endswith('.txt'):
                 filename = f"{filename}.txt"
 
-            filepath = os.path.join(self.presets_dir, filename)
+            filepath = os.path.join(presets_dir, filename)
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(result_text)
 
             summary += f" | Saved to: my_presets/{filename}"
 
         return (result_text, summary, len(result_list))
+
+
+class WildcardPreview:
+    """
+    Preview outputs of a wildcard token quickly (sampling).
+
+    This is meant to speed up creative iteration: you can explore what a wildcard
+    file or folder wildcard will yield without digging through files.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        labels, mapping, tooltip = build_category_options()
+        cls._CATEGORY_LABELS = labels
+        cls._CATEGORY_MAP = mapping
+
+        return {
+            "required": {
+                "wildcard_token": ("STRING", {
+                    "default": "__wildcards/example__",
+                    "tooltip": "Wildcard token to preview. Examples: __cats/poses__, __styles/*__, __styles/prefix*__"
+                }),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "samples": ("INT", {"default": 10, "min": 1, "max": 200}),
+                "wildcard_folder": (labels, {
+                    "default": labels[0] if labels else "wildcards",
+                    "tooltip": tooltip
+                }),
+            },
+            "optional": {
+                "deduplicate": ("BOOLEAN", {"default": True, "tooltip": "Remove duplicate sample lines"}),
+                "show_indices": ("BOOLEAN", {"default": True, "tooltip": "Prefix lines with 1..N"}),
+            }
+        }
+
+    RETURN_TYPES = ("STRING", "INT")
+    RETURN_NAMES = ("preview", "unique_count")
+    FUNCTION = "preview"
+    CATEGORY = "cc-prompt-studio/utils"
+
+    @staticmethod
+    def _normalize_token(token: str) -> str:
+        t = (token or "").strip()
+        if t.startswith("__") and t.endswith("__") and len(t) >= 4:
+            t = t[2:-2]
+        # tokens can be written as __cat/file__ or cat/file
+        return t.strip().strip("/")
+
+    def preview(self, wildcard_token: str, seed: int, samples: int, wildcard_folder: str,
+                deduplicate: bool = True, show_indices: bool = True):
+        token = self._normalize_token(wildcard_token)
+        if not token:
+            return ("", 0)
+
+        folder_map = getattr(self.__class__, "_CATEGORY_MAP", {}) or {}
+        wildcard_root = folder_map.get(wildcard_folder)
+        if not wildcard_root:
+            wildcard_root = os.path.join(_default_package_root(), "wildcards")
+
+        rng = SeededRandom(seed)
+        out: List[str] = []
+        for _ in range(int(samples)):
+            picked = process_file_wildcard(token, rng.next_rng(), wildcard_root, bracket_ctx=None)
+            if picked is None:
+                picked = ""
+            picked = str(picked).strip()
+            if picked:
+                out.append(picked)
+
+        if deduplicate:
+            # preserve order while dropping dupes
+            seen = set()
+            unique = []
+            for s in out:
+                if s not in seen:
+                    seen.add(s)
+                    unique.append(s)
+            out = unique
+
+        if show_indices:
+            text = "\n".join(f"{i+1}. {s}" for i, s in enumerate(out))
+        else:
+            text = "\n".join(out)
+
+        return (text, len(out))
