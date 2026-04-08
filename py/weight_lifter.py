@@ -6,7 +6,7 @@ from .generator import SeededRandom
 
 class WeightLifter:
     """
-    🏋🏼 Weight Lifter - Apply systematic or random weights to tags.
+    Weight Lifter - Apply systematic or random weights to tags.
 
     Modes:
       - RANDOM: Independent random weights in [min,max]. Randomly selects which tags to modify.

@@ -87,10 +87,10 @@ class LoraTagNormalizer:
                         "default": "NORMALIZE",
                         "tooltip": (
                             "Mode of operation:\n"
-                            "NORMALIZE — always scale selected tags so their combined magnitude equals target_weight.\n"
-                            "LIMITER — if combined magnitude <= target_weight do nothing; otherwise normalize down to target_weight (hard cap).\n"
-                            "SOFT_COMPRESS — gentle compressor (approx. 1:2 style). If sum > target_weight, reduce values using a soft curve (keeps sum > target but much smaller than original).\n"
-                            "HARD_COMPRESS — stronger compressor (approx. 1:5 style). Uses the same algorithm as SOFT_COMPRESS but with stronger settings."
+                            "NORMALIZE - always scale selected tags so their combined magnitude equals target_weight.\n"
+                            "LIMITER - if combined magnitude <= target_weight do nothing; otherwise normalize down to target_weight (hard cap).\n"
+                            "SOFT_COMPRESS - gentle compressor (approx. 1:2 style). If sum > target_weight, reduce values using a soft curve (keeps sum > target but much smaller than original).\n"
+                            "HARD_COMPRESS - stronger compressor (approx. 1:5 style). Uses the same algorithm as SOFT_COMPRESS but with stronger settings."
                         ),
                     },
                 ),

@@ -16,6 +16,10 @@ from .py.math_utils import *
 # cc-prompt-studio: Unified Character Prompt node
 from .py.character_prompt_studio import CharacterPromptStudio
 from .py.llm_janitor import CCLLMJanitor
+from .py.wildcard_tools import WildcardTools, WildcardSearchExtract
+
+# Web directory for JavaScript extensions (custom widgets, UI enhancements)
+WEB_DIRECTORY = "./js"
 
 NODE_CLASS_MAPPINGS = {
     "PromptGenerator": PromptGenerator,
@@ -44,38 +48,44 @@ NODE_CLASS_MAPPINGS = {
     # cc-prompt-studio: Unified Character Prompt node
     "CharacterPromptStudio": CharacterPromptStudio,
     "CCLLMJanitor": CCLLMJanitor,
+    "WildcardTools": WildcardTools,
+    "WildcardSearchExtract": WildcardSearchExtract,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "PromptGenerator": "Prompt Generator 💡",
-    "PromptGeneratorAdvanced": "Prompt Generator 💡 (Advanced)",
-    "PromptSequencer": "Prompt Sequencer 🎞️",
-    "PromptRepack": "Prompt Repack 📦",
-    "PromptAliasSwap": "Prompt Alias Swap 📚",
-    "PromptReplace": "Prompt Replace 🔁",
+    "PromptGenerator": "Prompt Generator",
+    "PromptGeneratorAdvanced": "Prompt Generator (Advanced)",
+    "PromptSequencer": "Prompt Sequencer",
+    "PromptRepack": "Prompt Repack",
+    "PromptAliasSwap": "Prompt Alias Swap",
+    "PromptReplace": "Prompt Replace",
     "PromptContextMerge": "Prompt Context Merge",
-    "WeightLifter": "Weight Lifter 🏋️‍♀️",
-    "PromptSplitter": "Prompt Splitter ✂️",
-    "PromptMixer": "Prompt Mixer 🥣",
-    "PromptShuffle": "Prompt Shuffle ♻️",
-    "PromptShuffleAdvanced": "Prompt Shuffle ♻️ (Advanced)",
-    "PromptCleanup": "Prompt Cleanup 🧹",
-    "NormalizeLoraTags": "Normalize Lora Tags 🟰",
-    "StringSplit": "String Split ⛓️‍💥",
-    "StringAppend3": "String Append 🔗",
-    "StringAppend8": "String Append 🔗",
-    "ScaledSeedGenerator": "Scaled Seed Generator 🌱",
+    "WeightLifter": "Weight Lifter",
+    "PromptSplitter": "Prompt Splitter",
+    "PromptMixer": "Prompt Mixer",
+    "PromptShuffle": "Prompt Shuffle",
+    "PromptShuffleAdvanced": "Prompt Shuffle (Advanced)",
+    "PromptCleanup": "Prompt Cleanup",
+    "NormalizeLoraTags": "Normalize Lora Tags",
+    "StringSplit": "String Split",
+    "StringAppend3": "String Append",
+    "StringAppend8": "String Append",
+    "ScaledSeedGenerator": "Scaled Seed Generator",
     "TagCounter": "Tag Counter",
     "SaveImageAndText": "Save Image And Text",
     "RandomFloats": "Random Floats 4",
     "RandomIntegers": "Random Integers 4",
 
     # cc-prompt-studio: Unified Character Prompt node
-    "CharacterPromptStudio": "Character Prompt Studio 🎭",
-    "CCLLMJanitor": "CC LLM Janitor 🤖",
+    "CharacterPromptStudio": "Character Prompt Studio",
+    "CCLLMJanitor": "CC LLM Janitor",
+    "WildcardTools": "Wildcard Tools",
+    "WildcardSearchExtract": "Wildcard Search & Extract",
 }
 
 def register_nodes(comfy):
     for name, cls in NODE_CLASS_MAPPINGS.items():
         display_name = NODE_DISPLAY_NAME_MAPPINGS.get(name, name)
         comfy.register_node(cls, display_name=display_name)
+
+__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]

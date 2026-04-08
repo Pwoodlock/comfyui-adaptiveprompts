@@ -100,10 +100,8 @@ class CharacterPromptStudio:
         category_list = list(categories.keys()) if categories else ["None"]
         category_list.sort()
 
-        # Build tooltip showing available categories
-        category_tooltip = "Available wildcard categories:\n" + "\n".join(f"- {cat}" for cat in category_list[:10])
-        if len(category_list) > 10:
-            category_tooltip += f"\n... and {len(category_list) - 10} more"
+        # Build tooltip showing ALL available categories (no truncation)
+        category_tooltip = "Available wildcard categories:\n" + "\n".join(f"- {cat}" for cat in category_list)
 
         return {
             "required": {
@@ -123,7 +121,7 @@ class CharacterPromptStudio:
                 # Action button - set to TRUE to refresh
                 "refresh": ("BOOLEAN", {
                     "default": False,
-                    "tooltip": "🔄 Click to refresh wildcard cache after adding new files/folders"
+                    "tooltip": "[REFRESH] Click to refresh wildcard cache after adding new files/folders"
                 }),
 
                 # Wildcard category browser (shows available categories)
@@ -303,23 +301,20 @@ class CharacterPromptStudio:
 
         # Build categories list (always fresh when refresh=True)
         categories = self._scan_wildcard_categories()
-        categories_list = "📁 WILDCARD SYNTAX EXAMPLES:\n\n"
+        categories_list = "# Wildcard Syntax Examples\n\n"
 
         for cat, items in sorted(categories.items()):
-            categories_list += f"━━━ {cat} ━━━\n"
-            # Show example syntax
+            categories_list += f"## {cat} **({len(items)} items)**\n\n"
+            # Show ALL items (no truncation)
             if items:
-                # Show up to 5 examples
-                for item in sorted(items)[:5]:
+                for item in sorted(items):
                     if item.endswith('/'):
                         # It's a subdirectory
-                        categories_list += f"  __{cat}/{item[:-1]}/*__  (any file in {item[:-1]})\n"
+                        categories_list += f"- `__{cat}/{item[:-1]}/*__` *(any file in {item[:-1]})*\n"
                     else:
                         # It's a file
-                        categories_list += f"  __{cat}/{item}__\n"
-                if len(items) > 5:
-                    categories_list += f"  ... and {len(items) - 5} more\n"
-            categories_list += "\n"
+                        categories_list += f"- `__{cat}/{item}__`\n"
+            categories_list += "\n---\n\n"
 
         rng = SeededRandom(seed)
 
