@@ -180,6 +180,12 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# ---- Quarantined recursive output (delete when convenient) ----
+_quarantine_global_safe_sets_RECURSIVE/
+
+# ---- Generated safe-set output (rebuild with build_global_safe_set.py) ----
+global_safe_sets/
+
 # ---- Local wildcard libraries (DO NOT COMMIT CONTENTS) ----
 # Keep only directory structure via .gitkeep files.
 /wildcards/**

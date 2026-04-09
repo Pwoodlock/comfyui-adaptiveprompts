@@ -163,6 +163,8 @@ def main() -> int:
         # opt-in explicit / stylized trees we already maintain separately
         "ponyxl_spicy",
         "z_image_extracted",
+        # CRITICAL: never scan our own output tree (causes recursive nesting)
+        "global_safe_sets",
     }
 
     safe_dir = out_root / "global_safe"
@@ -207,6 +209,22 @@ def main() -> int:
             "\\hair\\inbox_cursor_root\\" in fp_low
             or "\\outfit\\dresses\\inbox_cursor_root\\" in fp_low
         ):
+            continue
+
+        # Path sanity: reject overly deep or recursive paths
+        rel = fp.relative_to(root)
+        depth = len(rel.parts)
+        if depth > 4:
+            continue
+        # Reject any path with repeated directory names (recursion indicator)
+        part_counts = {}
+        for p in rel.parts:
+            part_counts[p] = part_counts.get(p, 0) + 1
+            if part_counts[p] > 1:
+                break
+        else:
+            part_counts = {}
+        if part_counts and any(v > 1 for v in part_counts.values()):
             continue
         scanned += 1
         s = scan(fp)
