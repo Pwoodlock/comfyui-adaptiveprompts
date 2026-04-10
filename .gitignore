@@ -200,6 +200,10 @@ global_safe_sets/
 !/wildcards_curvy_exotic/**/
 !/wildcards_curvy_exotic/**/.gitkeep
 
+/wildcards_clean/**
+!/wildcards_clean/**/
+!/wildcards_clean/**/.gitkeep
+
 /wildcard_examples/**
 !/wildcard_examples/**/
 !/wildcard_examples/**/.gitkeep
@@ -210,8 +214,16 @@ global_safe_sets/
 
 /assets
 .vscode/
+.vs/
+.fastembed_cache/
 *.yaml
 /wip
 /wildcards_bonus
 /wildcards_yaml
 /wildcards_sec
+
+# ---- Never commit planning/conversation artifacts ----
+/handoff.md
+/wildcard_audit_plan.md
+/wildcards_clean_FINALIZATION_CHECKLIST.md
+/CLAUDE.md
